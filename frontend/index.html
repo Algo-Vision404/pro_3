@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Support AI | Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside>
+        <div class="logo">NEXUS OPS</div>
+        <nav>
+            <ul>
+                <li class="active">Overview</li>
+                <li>Live Queue</li>
+                <li>Knowledge Base</li>
+                <li>AI Metrics</li>
+                <li>Settings</li>
+            </ul>
+        </nav>
+        <div style="margin-top: auto;">
+            <div class="badge badge-mid" style="width: 100%;">Mode: Assisted</div>
+        </div>
+    </aside>
+
+    <main>
+        <div class="header">
+            <h1>Tier-1 Operations</h1>
+            <button class="btn btn-primary" onclick="ingestDemoTicket()">Ingest Sample Ticket</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Processed</h3>
+                <div class="value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Auto-Resolved</h3>
+                <div class="value" id="stat-resolved">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Escalated</h3>
+                <div class="value" id="stat-escalated">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Confidence</h3>
+                <div class="value" id="stat-confidence">0%</div>
+            </div>
+        </div>
+
+        <div class="ticket-container">
+            <div class="ticket-header" style="display: grid; grid-template-columns: 80px 1fr 100px 150px; padding: 1rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
+                <div>ID</div>
+                <div>Subject</div>
+                <div>Urgency</div>
+                <div>Status</div>
+            </div>
+            <div id="ticket-list">
+                <!-- Data will be injected here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Partial / Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="step-indicator">
+                <div class="step completed"></div>
+                <div class="step completed"></div>
+                <div class="step completed"></div>
+                <div class="step"></div>
+            </div>
+            
+            <div class="ticket-detail-grid">
+                <div class="content-side">
+                    <h2 id="modal-subject">Ticket Subject</h2>
+                    <p id="modal-body" style="color: var(--text-muted); margin: 1rem 0; font-size: 0.9rem;"></p>
+                    
+                    <div class="response-area">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">AI Draft Response</label>
+                        <textarea id="ai-response-draft"></textarea>
+                    </div>
+                </div>
+                
+                <div class="meta-side">
+                    <div class="stat-card" style="margin-bottom: 1rem;">
+                        <h3>Classification</h3>
+                        <div id="modal-intent" style="font-weight: 600; font-size: 0.9rem;">Intent: Billing</div>
+                        <div id="modal-sentiment" style="font-size: 0.8rem; color: var(--text-muted);">Sentiment: Negative</div>
+                    </div>
+                    
+                    <div class="stat-card" style="margin-bottom: 1rem;">
+                        <h3>RAG Context</h3>
+                        <div id="modal-context" style="font-size: 0.75rem; color: var(--text-muted); max-height: 200px; overflow-y: auto;">
+                            No context retrieved.
+                        </div>
+                    </div>
+
+                    <div id="escalation-alert" style="display: none; padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 0.5rem; color: var(--danger); font-size: 0.8rem;">
+                        <strong>Escalation Required:</strong> <span id="escalation-reason"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="closeModal()">Back to Queue</button>
+                <button class="btn btn-primary" id="btn-resolve">Resolve & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

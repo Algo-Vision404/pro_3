@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+openai
+chromadb
+pandas
+python-dotenv
+numpy
+tiktoken
+python-multipart
+jinja2
