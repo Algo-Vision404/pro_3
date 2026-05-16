@@ -4,9 +4,12 @@ async function updateMetrics() {
     try {
         const res = await fetch(`${API_BASE}/metrics`);
         const data = await res.json();
-        document.getElementById('stat-total').innerText = data.total_processed;
-        document.getElementById('stat-resolved').innerText = data.resolved_count;
-        document.getElementById('stat-escalated').innerText = data.escalated_count;
+        
+        // Animate counting up for values if changed
+        animateValue('stat-total', data.total_processed);
+        animateValue('stat-resolved', data.resolved_count);
+        animateValue('stat-escalated', data.escalated_count);
+        
         const confidence = data.total_processed > 0 ? (data.avg_confidence || 0.85) : 0;
         document.getElementById('stat-confidence').innerText = `${Math.round(confidence * 100)}%`;
     } catch (e) {
@@ -14,18 +17,42 @@ async function updateMetrics() {
     }
 }
 
+function animateValue(id, target) {
+    const el = document.getElementById(id);
+    const current = parseInt(el.innerText) || 0;
+    if (current !== target) {
+        el.innerText = target;
+        el.style.transform = 'scale(1.2)';
+        el.style.color = 'var(--accent-primary)';
+        setTimeout(() => {
+            el.style.transform = 'scale(1)';
+            el.style.color = '';
+        }, 300);
+    }
+}
+
 async function ingestDemoTicket() {
     const samples = [
-        { user_id: "user_1", subject: "Urgent: Billing issue", body: "I was charged twice twice last night. Please refund immediately.", source: "email" },
-        { user_id: "user_2", subject: "Login failed", body: "I can't access my account after the password reset. Help!", source: "api" },
-        { user_id: "user_3", subject: "Feature request", body: "Can we have a dark mode in the main app?", source: "webhook" }
+        { user_id: "user_1", subject: "Urgent: Billing issue - double charge", body: "I was charged twice last night for my premium subscription. Please refund the second charge immediately as this caused an overdraft.", source: "email" },
+        { user_id: "user_2", subject: "Login failed after reset", body: "I can't access my account after the password reset. The system keeps telling me invalid credentials even though I just changed it.", source: "api" },
+        { user_id: "user_3", subject: "Feature request: Dark Mode", body: "Can we have a dark mode in the main app? The current UI is too bright for late night coding sessions.", source: "webhook" },
+        { user_id: "user_4", subject: "API Rate limits exceeded", body: "My production application is getting 429 Too Many Requests errors, but my dashboard shows I have not exceeded my quota.", source: "api" },
+        { user_id: "user_5", subject: "How to export data?", body: "I need to export all my activity logs to a CSV for compliance reasons. Where can I find this option?", source: "email" }
     ];
     
     const sample = samples[Math.floor(Math.random() * samples.length)];
     const btn = document.querySelector('.btn-primary');
-    const originalText = btn.innerText;
-    btn.innerText = "Ingesting...";
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Ingesting...`;
     btn.disabled = true;
+
+    // Add spin keyframe dynamically if not present
+    if (!document.getElementById('spinner-style')) {
+        const style = document.createElement('style');
+        style.id = 'spinner-style';
+        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+    }
 
     try {
         const ingestRes = await fetch(`${API_BASE}/ingest_ticket`, {
@@ -43,7 +70,7 @@ async function ingestDemoTicket() {
         console.error(e);
         alert("Connection Error: Is the backend server running on port 8000?");
     } finally {
-        btn.innerText = "Ingest Sample Ticket";
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
@@ -62,50 +89,81 @@ function renderList(tickets) {
     const list = document.getElementById('ticket-list');
     list.innerHTML = '';
     
+    if (tickets.length === 0) {
+        list.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-muted);">No tickets in queue.</div>`;
+        return;
+    }
+
     tickets.reverse().forEach(t => {
         const item = document.createElement('div');
         item.className = 'ticket-item';
         item.onclick = () => viewTicket(t.ticket_id);
         
         const urgencyClass = t.urgency_score > 0.7 ? 'badge-high' : t.urgency_score > 0.3 ? 'badge-mid' : 'badge-low';
-        const urgencyLabel = t.urgency_score > 0.7 ? 'High' : t.urgency_score > 0.3 ? 'Medium' : 'Low';
+        const urgencyLabel = t.urgency_score > 0.7 ? 'CRITICAL' : t.urgency_score > 0.3 ? 'NORMAL' : 'LOW';
         
+        let statusBadge = '';
+        if (t.status === 'resolved') statusBadge = '<span class="badge badge-low">RESOLVED</span>';
+        else if (t.status === 'escalated') statusBadge = '<span class="badge badge-high">ESCALATED</span>';
+        else statusBadge = '<span class="badge badge-mid">PENDING</span>';
+
         item.innerHTML = `
-            <div style="font-size: 0.7rem; color: var(--text-muted)">#${t.ticket_id.slice(0, 8)}</div>
-            <div style="font-weight: 600">${t.subject}</div>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 0.85rem; color: var(--text-muted)">#${t.ticket_id.slice(0, 6)}</div>
+            <div>
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">${t.subject}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Intent Analysis Complete</div>
+            </div>
             <div><span class="badge ${urgencyClass}">${urgencyLabel}</span></div>
-            <div><span class="badge" style="background: rgba(255,255,255,0.1)">${t.status.toUpperCase()}</span></div>
+            <div>${statusBadge}</div>
         `;
         list.appendChild(item);
     });
 }
 
 async function viewTicket(id) {
-    const res = await fetch(`${API_BASE}/ticket/${id}`);
-    const data = await res.json();
-    
-    const t = data.ticket;
-    const p = data.processed_data;
+    try {
+        const res = await fetch(`${API_BASE}/ticket/${id}`);
+        const data = await res.json();
+        
+        const t = data.ticket;
+        const p = data.processed_data;
 
-    document.getElementById('modal-subject').innerText = t.subject;
-    document.getElementById('modal-body').innerText = t.body;
-    document.getElementById('modal-intent').innerText = `Intent: ${p.classification.intent.replace('_', ' ')}`;
-    document.getElementById('modal-sentiment').innerText = `Sentiment: ${p.classification.sentiment}`;
-    document.getElementById('ai-response-draft').value = p.draft.response_draft;
-    
-    const escalationAlert = document.getElementById('escalation-alert');
-    if (p.escalation) {
-        escalationAlert.style.display = 'block';
-        document.getElementById('escalation-reason').innerText = p.escalation.issue_summary;
-    } else {
-        escalationAlert.style.display = 'none';
+        if (!p) {
+            alert("Ticket is still being processed.");
+            return;
+        }
+
+        document.getElementById('modal-subject').innerText = t.subject;
+        document.getElementById('modal-body').innerText = t.body;
+        document.getElementById('modal-intent').innerText = `Intent: ${p.classification.intent.replace('_', ' ').toUpperCase()}`;
+        document.getElementById('modal-sentiment').innerText = `Sentiment: ${p.classification.sentiment.toUpperCase()}`;
+        document.getElementById('ai-response-draft').value = p.draft.response_draft;
+        
+        const urgencyClass = p.classification.urgency_score > 0.7 ? 'badge-high' : p.classification.urgency_score > 0.3 ? 'badge-mid' : 'badge-low';
+        const urgencyLabel = p.classification.urgency_score > 0.7 ? 'CRITICAL' : p.classification.urgency_score > 0.3 ? 'NORMAL' : 'LOW';
+        const badgeEl = document.getElementById('modal-urgency-badge');
+        badgeEl.className = `badge ${urgencyClass}`;
+        badgeEl.innerText = urgencyLabel;
+
+        const escalationAlert = document.getElementById('escalation-alert');
+        if (p.escalation) {
+            escalationAlert.style.display = 'block';
+            document.getElementById('escalation-reason').innerText = p.escalation.issue_summary;
+        } else {
+            escalationAlert.style.display = 'none';
+        }
+
+        // Bind resolve button
+        const resolveBtn = document.getElementById('btn-resolve');
+        resolveBtn.onclick = () => resolveTicket(id);
+
+        const overlay = document.getElementById('modal-overlay');
+        overlay.style.display = 'flex';
+        // Small delay to allow display:flex to apply before adding active class for transition
+        setTimeout(() => overlay.classList.add('active'), 10);
+    } catch(e) {
+        console.error("Error viewing ticket", e);
     }
-
-    // Bind resolve button
-    const resolveBtn = document.getElementById('btn-resolve');
-    resolveBtn.onclick = () => resolveTicket(id);
-
-    document.getElementById('modal-overlay').style.display = 'flex';
 }
 
 async function resolveTicket(id) {
@@ -118,19 +176,23 @@ async function resolveTicket(id) {
                 ticket_id: id,
                 human_edited_response: editedResponse,
                 resolution_status: "resolved",
-                feedback_notes: "Human approved via dashboard"
+                feedback_notes: "Human approved via cognitive dashboard"
             })
         });
         closeModal();
-        refreshList();
-        updateMetrics();
+        await refreshList();
+        await updateMetrics();
     } catch (e) {
         alert("Failed to resolve ticket");
     }
 }
 
 function closeModal() {
-    document.getElementById('modal-overlay').style.display = 'none';
+    const overlay = document.getElementById('modal-overlay');
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 300); // match transition duration
 }
 
 // Sidebar logic
