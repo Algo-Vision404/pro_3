@@ -1,6 +1,6 @@
 # Nexus Support AI — Cognitive Operations Platform
 
-> **Production-grade, autonomous AI Customer Support Operations Platform.** Nexus replaces Tier-1 support with an end-to-end intelligent pipeline: ticket ingestion → classification → RAG retrieval → response synthesis → escalation routing — all exposed through a premium, real-time Cognitive Command Center.
+> **Production-grade, autonomous AI Customer Support Operations Platform.** Nexus replaces Tier-1 support with an end-to-end intelligent pipeline: ticket ingestion -> classification -> RAG retrieval -> response synthesis -> escalation routing — all exposed through a premium, real-time Cognitive Command Center.
 
 ---
 
@@ -10,7 +10,7 @@
 - [Architecture](#architecture)
 - [Features](#features)
 - [API Reference](#api-reference)
-- [Project Structure](#project-structure)
+- [System Architecture](#system-architecture)
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
 - [Usage Guide](#usage-guide)
@@ -21,9 +21,9 @@
 
 Nexus operates in two modes:
 | Mode | Behaviour |
-|------|-----------|
+|------|-----------| 
 | **Assisted** | Generates a draft response and routes to a human operator for review |
-| **Autonomous** | Auto-resolves tickets where AI confidence ≥ 75%, no human needed |
+| **Autonomous** | Auto-resolves tickets where AI confidence >= 75%, no human needed |
 
 A six-rule **Escalation Engine** catches edge-cases (legal risk, extreme urgency, low confidence) and routes them to the appropriate human team with a full risk assessment.
 
@@ -35,24 +35,24 @@ A six-rule **Escalation Engine** catches edge-cases (legal risk, extreme urgency
 
 ```mermaid
 flowchart TD
-    A[Ticket Source<br/>Email / API / Webhook] -->|POST /ingest_ticket| B(FastAPI Router)
-    B --> DB[(SQLite DB<br/>SQLAlchemy ORM)]
+    A["Ticket Source - Email / API / Webhook"] -->|POST /ingest_ticket| B(FastAPI Router)
+    B --> DB[("SQLite DB - SQLAlchemy ORM")]
     B -->|POST /process_ticket| C{AI Pipeline}
 
     subgraph C [AI Processing Pipeline]
         direction TB
-        C1[1. Classification Engine<br/>Rule-based keyword scoring<br/>Intent · Urgency · Sentiment]
-        C2[2. RAG Retrieval<br/>ChromaDB vector store<br/>Semantic similarity search]
-        C3[3. Generation Engine<br/>Template synthesis<br/>or GPT-4o-mini]
-        C4[4. Escalation Engine<br/>6-rule risk evaluator<br/>Legal · Urgency · Confidence]
+        C1["1. Classification Engine - Rule-based keyword scoring - Intent, Urgency, Sentiment"]
+        C2["2. RAG Retrieval - ChromaDB vector store - Semantic similarity search"]
+        C3["3. Generation Engine - Template synthesis or GPT-4o-mini"]
+        C4["4. Escalation Engine - 6-rule risk evaluator - Legal, Urgency, Confidence"]
         C1 --> C2 --> C3 --> C4
     end
 
     C --> DB
-    C -->|WebSocket broadcast| WS[Live Feed<br/>ws://localhost:8000/ws/live-feed]
+    C -->|WebSocket broadcast| WS["Live Feed - ws://localhost:8000/ws/live-feed"]
     DB -->|GET /metrics| METRICS[Analytics Engine]
     DB -->|GET /analytics| METRICS
-    WS --> UI[Cognitive Command Center<br/>localhost:8080]
+    WS --> UI["Cognitive Command Center - localhost:8080"]
     METRICS --> UI
 ```
 
@@ -60,14 +60,14 @@ flowchart TD
 
 ```mermaid
 graph LR
-    subgraph Frontend [Frontend — Port 8080]
+    subgraph Frontend ["Frontend - Port 8080"]
         F1[Ticket Queue]
         F2[Analytics Dashboard]
         F3[Knowledge Base Viewer]
-        F4[Modal: Ticket Detail]
+        F4["Modal: Ticket Detail"]
     end
 
-    subgraph Backend [Backend — Port 8000]
+    subgraph Backend ["Backend - Port 8000"]
         B1[FastAPI Router]
         B2[Classification Service]
         B3[RAG Service]
@@ -87,10 +87,10 @@ graph LR
 
 ```mermaid
 flowchart LR
-    IN[Ticket Text] --> KWS[Keyword Scorer<br/>Regex pattern matching<br/>per Intent taxonomy]
-    KWS --> URG[Urgency Booster<br/>Critical phrase detection]
-    KWS --> SENT[Sentiment Classifier<br/>5-tier: positive/neutral/<br/>negative/frustrated/urgent]
-    KWS --> INTENT[Intent Resolver<br/>9 categories]
+    IN[Ticket Text] --> KWS["Keyword Scorer - Regex pattern matching - per Intent taxonomy"]
+    KWS --> URG["Urgency Booster - Critical phrase detection"]
+    KWS --> SENT["Sentiment Classifier - 5-tier: positive/neutral/negative/frustrated/urgent"]
+    KWS --> INTENT["Intent Resolver - 9 categories"]
     URG & SENT --> CONF[Confidence Score]
     INTENT & CONF & SENT --> OUT[ClassificationResult]
 ```
@@ -99,19 +99,19 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    START[Ticket Processed] --> R1{Confidence < 60%?}
+    START[Ticket Processed] --> R1{"Confidence < 60%?"}
     R1 -- Yes --> ESC
-    R1 -- No --> R2{Urgency > 80%?}
+    R1 -- No --> R2{"Urgency > 80%?"}
     R2 -- Yes --> ESC
-    R2 -- No --> R3{Sensitive Intent?<br/>Account / Refund / Cancel}
+    R2 -- No --> R3{"Sensitive Intent? Account / Refund / Cancel"}
     R3 -- Yes --> ESC
-    R3 -- No --> R4{Extreme Sentiment?<br/>Frustrated or Urgent}
-    R4 -- Yes --> R4B{Urgency > 60%?}
+    R3 -- No --> R4{"Extreme Sentiment? Frustrated or Urgent"}
+    R4 -- Yes --> R4B{"Urgency > 60%?"}
     R4B -- Yes --> ESC
-    R4B -- No --> R5{Legal Keywords?<br/>lawyer / sue / breach}
-    R5 -- Yes --> ESC_CRITICAL[ESCALATE — Critical<br/>Risk Level: Legal]
-    R5 -- No --> RESOLVE[Auto-resolve or<br/>Pending Review]
-    ESC[ESCALATE — High/Medium<br/>Assign to Tier-2]
+    R4B -- No --> R5{"Legal Keywords? lawyer / sue / breach"}
+    R5 -- Yes --> ESC_CRITICAL["ESCALATE - Critical - Risk Level: Legal"]
+    R5 -- No --> RESOLVE["Auto-resolve or Pending Review"]
+    ESC["ESCALATE - High/Medium - Assign to Tier-2"]
 ```
 
 ---
@@ -120,17 +120,17 @@ flowchart TD
 
 | Feature | Description |
 |---------|-------------|
-| 🔍 **Smart Classification** | 9-intent, 5-sentiment rule-based engine with urgency scoring — works offline, no API key needed |
-| 📚 **RAG Knowledge Base** | ChromaDB vector store pre-seeded with 15 knowledge articles; supports semantic search and article management |
-| ✍️ **Template Generation** | Rich per-intent, per-sentiment response templates; optionally upgrades to GPT-4o-mini if `OPENAI_API_KEY` is set |
-| 🚨 **Escalation Engine** | Six-rule risk evaluator: low confidence, high urgency, sensitive intents, extreme sentiment, legal signals |
-| 💾 **SQLite Persistence** | Full SQLAlchemy ORM — all tickets, classifications, drafts, escalations, and feedback are persisted |
-| 📡 **WebSocket Live Feed** | Real-time ticket events broadcast via `ws://localhost:8000/ws/live-feed` |
-| 📊 **Analytics API** | Time-series volume & confidence trends, intent/sentiment distributions, resolution rates |
-| 🏥 **Health Check** | `/health` endpoint reports service status and latency for all subsystems |
-| 📖 **Knowledge Base API** | Full CRUD + semantic search (`/knowledge-base/search?q=...`) |
-| 🎛️ **Bulk Ingest** | `POST /bulk_ingest` accepts arrays of tickets for high-throughput scenarios |
-| 🗑️ **Ticket Delete** | `DELETE /ticket/{id}` for audit and compliance workflows |
+| **Smart Classification** | 9-intent, 5-sentiment rule-based engine with urgency scoring — works offline, no API key needed |
+| **RAG Knowledge Base** | ChromaDB vector store pre-seeded with 15 knowledge articles; supports semantic search and article management |
+| **Template Generation** | Rich per-intent, per-sentiment response templates; optionally upgrades to GPT-4o-mini if `OPENAI_API_KEY` is set |
+| **Escalation Engine** | Six-rule risk evaluator: low confidence, high urgency, sensitive intents, extreme sentiment, legal signals |
+| **SQLite Persistence** | Full SQLAlchemy ORM — all tickets, classifications, drafts, escalations, and feedback are persisted |
+| **WebSocket Live Feed** | Real-time ticket events broadcast via `ws://localhost:8000/ws/live-feed` |
+| **Analytics API** | Time-series volume & confidence trends, intent/sentiment distributions, resolution rates |
+| **Health Check** | `/health` endpoint reports service status and latency for all subsystems |
+| **Knowledge Base API** | Full CRUD + semantic search (`/knowledge-base/search?q=...`) |
+| **Bulk Ingest** | `POST /bulk_ingest` accepts arrays of tickets for high-throughput scenarios |
+| **Ticket Delete** | `DELETE /ticket/{id}` for audit and compliance workflows |
 
 ---
 
@@ -179,7 +179,7 @@ flowchart TD
 block-beta
     columns 3
 
-    block:INGESTION["🔌 Ingestion Layer"]:1
+    block:INGESTION["Ingestion Layer"]:1
         columns 1
         i1["Email Source"]
         i2["API / Webhook"]
@@ -188,9 +188,9 @@ block-beta
 
     space
 
-    block:FRONTEND["🖥️ Presentation Layer"]:1
+    block:FRONTEND["Presentation Layer"]:1
         columns 1
-        f1["Cognitive Command Center\n(localhost:8080)"]
+        f1["Cognitive Command Center (localhost:8080)"]
         f2["Live Ticket Queue"]
         f3["Analytics Dashboard"]
         f4["Knowledge Base Viewer"]
@@ -200,34 +200,34 @@ block-beta
     INGESTION -- "POST /ingest_ticket" --> API
     FRONTEND <-- "REST + WebSocket" --> API
 
-    block:API["⚡ API Gateway\nFastAPI — localhost:8000"]:3
+    block:API["API Gateway - FastAPI - localhost:8000"]:3
         columns 3
-        a1["Ticket Endpoints\n/ingest /tickets /ticket/{id}"]
-        a2["Pipeline Endpoint\n/process_ticket/{id}"]
-        a3["System Endpoints\n/health /metrics /analytics /docs"]
-        a4["Feedback Endpoint\n/feedback"]
-        a5["Knowledge Base\n/knowledge-base /search"]
-        a6["WebSocket\n/ws/live-feed"]
+        a1["Ticket Endpoints /ingest /tickets /ticket/{id}"]
+        a2["Pipeline Endpoint /process_ticket/{id}"]
+        a3["System Endpoints /health /metrics /analytics /docs"]
+        a4["Feedback Endpoint /feedback"]
+        a5["Knowledge Base /knowledge-base /search"]
+        a6["WebSocket /ws/live-feed"]
     end
 
     API --> PIPELINE
 
-    block:PIPELINE["🧠 AI Processing Pipeline"]:3
+    block:PIPELINE["AI Processing Pipeline"]:3
         columns 3
-        p1["1️⃣ Classification Engine\nRule-based keyword scoring\n9 intents · 5 sentiments\nUrgency boosting"]
-        p2["2️⃣ RAG Retrieval\nChromaDB semantic search\n15 seeded KB articles\nCosine similarity scoring"]
-        p3["3️⃣ Generation Engine\nTemplate library\nper intent + sentiment\nOptional GPT-4o-mini"]
+        p1["Classification Engine - Rule-based keyword scoring - 9 intents, 5 sentiments - Urgency boosting"]
+        p2["RAG Retrieval - ChromaDB semantic search - 15 seeded KB articles - Cosine similarity scoring"]
+        p3["Generation Engine - Template library per intent + sentiment - Optional GPT-4o-mini"]
         space
-        p4["4️⃣ Escalation Engine\n6-rule risk evaluator\nLegal · Urgency · Confidence\nSentiment · Intent"]
+        p4["Escalation Engine - 6-rule risk evaluator - Legal, Urgency, Confidence, Sentiment, Intent"]
         space
     end
 
     PIPELINE --> STORAGE
 
-    block:STORAGE["💾 Persistence Layer"]:2
+    block:STORAGE["Persistence Layer"]:2
         columns 2
-        s1["SQLite (SQLAlchemy ORM)\nTickets · Classifications\nDrafts · Escalations\nFeedback · KB Articles"]
-        s2["ChromaDB Vector Store\nHNSW Index\nCosine Similarity\nPersistent or Ephemeral"]
+        s1["SQLite (SQLAlchemy ORM) - Tickets, Classifications - Drafts, Escalations - Feedback, KB Articles"]
+        s2["ChromaDB Vector Store - HNSW Index - Cosine Similarity - Persistent or Ephemeral"]
     end
 ```
 

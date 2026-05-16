@@ -43,16 +43,8 @@ async function ingestDemoTicket() {
     const sample = samples[Math.floor(Math.random() * samples.length)];
     const btn = document.querySelector('.btn-primary');
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Ingesting...`;
+    btn.innerHTML = 'Ingesting...';
     btn.disabled = true;
-
-    // Add spin keyframe dynamically if not present
-    if (!document.getElementById('spinner-style')) {
-        const style = document.createElement('style');
-        style.id = 'spinner-style';
-        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
-        document.head.appendChild(style);
-    }
 
     try {
         const ingestRes = await fetch(`${API_BASE}/ingest_ticket`, {
