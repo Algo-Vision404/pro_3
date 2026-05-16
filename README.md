@@ -1,115 +1,267 @@
-# Nexus Support AI - Cognitive Operations Platform
+# Nexus Support AI — Cognitive Operations Platform
 
-A production-grade, autonomous AI Customer Support Operations Platform designed to supercharge Tier-1 support. Nexus autonomously ingests, classifies, and resolves tickets utilizing a high-performance RAG-based context retrieval engine, LLM-powered synthesis, and an immersive, state-of-the-art Cognitive Command Center.
+> **Production-grade, autonomous AI Customer Support Operations Platform.** Nexus replaces Tier-1 support with an end-to-end intelligent pipeline: ticket ingestion → classification → RAG retrieval → response synthesis → escalation routing — all exposed through a premium, real-time Cognitive Command Center.
 
-## Project Overview
+---
 
-This system is built to handle customer support tickets with unparalleled efficiency and intelligence. It employs a Retrieval-Augmented Generation (RAG) architecture to produce accurate, contextually-aware resolutions. The agent operates in two core modalities:
-- **Autonomous Mode**: Intelligently resolves tickets end-to-end when confidence scores exceed safety thresholds.
-- **Assisted Mode**: Synthesizes a high-accuracy draft response, routing it to human operators for final approval in the Command Center.
+## Table of Contents
 
-The platform is fortified by a robust escalation engine for high-risk or ambiguous cases, alongside a continuous-learning feedback loop.
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [API Reference](#api-reference)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Usage Guide](#usage-guide)
 
-## Key Features
+---
 
-- **Automated Ingestion**: Ingest high-volume support streams from multifaceted sources (Email, API, Webhooks).
-- **Cognitive Classification**: Intelligent, deep-learning based classification of intent, sentiment, and urgency scoring.
-- **RAG Context Retrieval**: Rapid semantic search into institutional knowledge bases and historical resolutions via ChromaDB.
-- **Draft Synthesis**: Highly accurate, context-aware draft generation using advanced OpenAI GPT pipelines.
-- **Escalation Engine**: Autonomous flagging of complex, high-liability, or emotionally charged tickets.
-- **Feedback Loop**: Continuous reinforcement learning driven by human operator edits and approvals.
-- **Cognitive Command Center**: A premium, high-fidelity UI featuring glassmorphism, dynamic metrics, active system health monitoring, and fluid micro-animations.
+## Overview
+
+Nexus operates in two modes:
+| Mode | Behaviour |
+|------|-----------|
+| **Assisted** | Generates a draft response and routes to a human operator for review |
+| **Autonomous** | Auto-resolves tickets where AI confidence ≥ 75%, no human needed |
+
+A six-rule **Escalation Engine** catches edge-cases (legal risk, extreme urgency, low confidence) and routes them to the appropriate human team with a full risk assessment.
+
+---
 
 ## Architecture
 
-### Backend Engine
-- **Framework**: FastAPI (Python) - Async, high-throughput API routing.
-- **Vector Storage**: ChromaDB for rapid RAG semantic retrieval.
-- **LLM Layer**: OpenAI GPT models for NLP processing and synthesis.
-- **Database**: SQLAlchemy for persistent transactional storage (In-memory used for demo environments).
-- **Data Processing**: Pandas, NumPy for metric aggregation.
+### End-to-End Data Flow
 
-### Frontend Command Center
-- **Structure**: Semantic HTML5 with dynamic injection.
-- **Design System**: Premium "Deep Dark" aesthetic featuring advanced glassmorphism, dynamic gradients, glowing accents, and modern typography (Inter & Outfit).
-- **Interaction Logic**: Vanilla JavaScript driving real-time metric polling, responsive modals, and dynamic data binding.
+```mermaid
+flowchart TD
+    A[Ticket Source<br/>Email / API / Webhook] -->|POST /ingest_ticket| B(FastAPI Router)
+    B --> DB[(SQLite DB<br/>SQLAlchemy ORM)]
+    B -->|POST /process_ticket| C{AI Pipeline}
 
-## Getting Started
+    subgraph C [AI Processing Pipeline]
+        direction TB
+        C1[1. Classification Engine<br/>Rule-based keyword scoring<br/>Intent · Urgency · Sentiment]
+        C2[2. RAG Retrieval<br/>ChromaDB vector store<br/>Semantic similarity search]
+        C3[3. Generation Engine<br/>Template synthesis<br/>or GPT-4o-mini]
+        C4[4. Escalation Engine<br/>6-rule risk evaluator<br/>Legal · Urgency · Confidence]
+        C1 --> C2 --> C3 --> C4
+    end
 
-### Prerequisites
-- Python 3.9+
-- Node.js (or any static HTTP server for the frontend)
-- OpenAI API Key
+    C --> DB
+    C -->|WebSocket broadcast| WS[Live Feed<br/>ws://localhost:8000/ws/live-feed]
+    DB -->|GET /metrics| METRICS[Analytics Engine]
+    DB -->|GET /analytics| METRICS
+    WS --> UI[Cognitive Command Center<br/>localhost:8080]
+    METRICS --> UI
+```
 
-### Backend Initialization
+### Service Architecture
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+```mermaid
+graph LR
+    subgraph Frontend [Frontend — Port 8080]
+        F1[Ticket Queue]
+        F2[Analytics Dashboard]
+        F3[Knowledge Base Viewer]
+        F4[Modal: Ticket Detail]
+    end
 
-2. Provision and activate the virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+    subgraph Backend [Backend — Port 8000]
+        B1[FastAPI Router]
+        B2[Classification Service]
+        B3[RAG Service]
+        B4[Generation Service]
+        B5[Escalation Service]
+        B6[SQLite + SQLAlchemy]
+        B7[ChromaDB Vector Store]
+    end
 
-3. Install platform dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+    F1 & F2 & F3 & F4 <-->|REST + WebSocket| B1
+    B1 --> B2 --> B3 --> B4 --> B5
+    B1 <--> B6
+    B3 <--> B7
+```
 
-4. Configure environment parameters in `.env`:
-   ```env
-   OPENAI_API_KEY=your_api_key_here
-   DATABASE_URL=sqlite:///./support_agent.db
-   CHROMA_DB_PATH=./chroma_db
-   ```
+### Classification Engine — Intent Scoring
 
-5. Ignite the backend server:
-   ```bash
-   python -m app.main
-   ```
-   The engine will initialize and bind to `http://localhost:8000`.
+```mermaid
+flowchart LR
+    IN[Ticket Text] --> KWS[Keyword Scorer<br/>Regex pattern matching<br/>per Intent taxonomy]
+    KWS --> URG[Urgency Booster<br/>Critical phrase detection]
+    KWS --> SENT[Sentiment Classifier<br/>5-tier: positive/neutral/<br/>negative/frustrated/urgent]
+    KWS --> INTENT[Intent Resolver<br/>9 categories]
+    URG & SENT --> CONF[Confidence Score]
+    INTENT & CONF & SENT --> OUT[ClassificationResult]
+```
 
-### Frontend Initialization
+### Escalation Decision Tree
 
-The Cognitive Command Center is a static web application, engineered for rapid deployment.
+```mermaid
+flowchart TD
+    START[Ticket Processed] --> R1{Confidence < 60%?}
+    R1 -- Yes --> ESC
+    R1 -- No --> R2{Urgency > 80%?}
+    R2 -- Yes --> ESC
+    R2 -- No --> R3{Sensitive Intent?<br/>Account / Refund / Cancel}
+    R3 -- Yes --> ESC
+    R3 -- No --> R4{Extreme Sentiment?<br/>Frustrated or Urgent}
+    R4 -- Yes --> R4B{Urgency > 60%?}
+    R4B -- Yes --> ESC
+    R4B -- No --> R5{Legal Keywords?<br/>lawyer / sue / breach}
+    R5 -- Yes --> ESC_CRITICAL[ESCALATE — Critical<br/>Risk Level: Legal]
+    R5 -- No --> RESOLVE[Auto-resolve or<br/>Pending Review]
+    ESC[ESCALATE — High/Medium<br/>Assign to Tier-2]
+```
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+---
 
-2. Boot a local server:
-   ```bash
-   python -m http.server 8080
-   ```
-   Access the command center at `http://localhost:8080`.
+## Features
 
-## Directory Architecture
+| Feature | Description |
+|---------|-------------|
+| 🔍 **Smart Classification** | 9-intent, 5-sentiment rule-based engine with urgency scoring — works offline, no API key needed |
+| 📚 **RAG Knowledge Base** | ChromaDB vector store pre-seeded with 15 knowledge articles; supports semantic search and article management |
+| ✍️ **Template Generation** | Rich per-intent, per-sentiment response templates; optionally upgrades to GPT-4o-mini if `OPENAI_API_KEY` is set |
+| 🚨 **Escalation Engine** | Six-rule risk evaluator: low confidence, high urgency, sensitive intents, extreme sentiment, legal signals |
+| 💾 **SQLite Persistence** | Full SQLAlchemy ORM — all tickets, classifications, drafts, escalations, and feedback are persisted |
+| 📡 **WebSocket Live Feed** | Real-time ticket events broadcast via `ws://localhost:8000/ws/live-feed` |
+| 📊 **Analytics API** | Time-series volume & confidence trends, intent/sentiment distributions, resolution rates |
+| 🏥 **Health Check** | `/health` endpoint reports service status and latency for all subsystems |
+| 📖 **Knowledge Base API** | Full CRUD + semantic search (`/knowledge-base/search?q=...`) |
+| 🎛️ **Bulk Ingest** | `POST /bulk_ingest` accepts arrays of tickets for high-throughput scenarios |
+| 🗑️ **Ticket Delete** | `DELETE /ticket/{id}` for audit and compliance workflows |
+
+---
+
+## API Reference
+
+### Tickets
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/ingest_ticket` | Ingest a single ticket |
+| `POST` | `/bulk_ingest` | Ingest multiple tickets |
+| `POST` | `/process_ticket/{id}?mode=assisted\|autonomous` | Run AI pipeline on a ticket |
+| `GET` | `/tickets?status=&intent=&limit=` | List tickets with optional filters |
+| `GET` | `/ticket/{id}` | Get full ticket with AI results |
+| `DELETE` | `/ticket/{id}` | Delete a ticket |
+
+### Feedback & Learning
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/feedback` | Submit human edit, rating, and resolution status |
+
+### Analytics
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/metrics` | Live operational metrics |
+| `GET` | `/analytics` | Full dashboard with 24h time-series trends |
+
+### Knowledge Base
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/knowledge-base?category=` | List knowledge articles |
+| `POST` | `/knowledge-base` | Add article (indexed in ChromaDB automatically) |
+| `GET` | `/knowledge-base/search?q=` | Semantic search |
+
+### System
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | System health report |
+| `GET` | `/docs` | Swagger interactive API docs |
+| `WS` | `/ws/live-feed` | WebSocket event stream |
+
+---
+
+## Project Structure
 
 ```text
 nexus-support-ai/
 ├── backend/
 │   ├── app/
-│   │   ├── models/       # Pydantic schemas and SQLAlchemy models
-│   │   ├── services/     # Core logic engines (RAG, Classification, Escalation)
-│   │   └── main.py       # FastAPI router and entry point
-│   ├── requirements.txt  # Core dependencies
-│   └── .env              # Environment configurations
+│   │   ├── __init__.py
+│   │   ├── main.py                  # FastAPI router, WebSocket, startup lifecycle
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── schema.py            # All Pydantic models (request/response/analytics)
+│   │   │   └── database.py          # SQLAlchemy ORM models + engine setup
+│   │   └── services/
+│   │       ├── __init__.py
+│   │       ├── classification_service.py  # Rule-based keyword scoring classifier
+│   │       ├── rag_service.py             # ChromaDB RAG with 15 seeded articles
+│   │       ├── generation_service.py      # Template engine + optional GPT-4o-mini
+│   │       └── escalation_service.py      # 6-rule risk escalation engine
+│   ├── data/
+│   │   ├── nexus.db                 # SQLite database (auto-created)
+│   │   └── chroma_db/               # ChromaDB vector store (auto-created)
+│   ├── requirements.txt
+│   └── .env                         # Optional: OPENAI_API_KEY, DATABASE_URL
 ├── frontend/
-│   ├── index.html        # Cognitive Command Center UI
-│   ├── style.css         # Premium glassmorphic design system
-│   └── script.js         # Reactive UI state and API integrations
-└── demo.py               # Synthetic ticket pipeline simulator
+│   ├── index.html                   # Cognitive Command Center UI
+│   ├── style.css                    # Premium glassmorphic design system
+│   └── script.js                    # Reactive data binding + WebSocket client
+└── demo.py                          # Synthetic ticket pipeline simulator
 ```
 
-## Platform Operations
+---
 
-1. Spin up the backend API engine.
-2. Launch the frontend and open the Cognitive Command Center in a modern browser.
-3. Utilize the **"Ingest Synthetic Ticket"** tool to simulate incoming support requests from various vectors.
-4. Monitor the Real-time Queue as the AI autonomously processes, classifies, and synthesizes drafts.
-5. Review, edit, and approve drafts inside the modal interface to close the feedback loop.
-6. Observe system health and telemetry through the integrated AI Metrics dashboard.
+## Getting Started
+
+### Prerequisites
+- Python 3.9+
+- No API keys required to run in offline mode
+
+### Backend
+
+```bash
+cd backend
+
+# Create virtualenv
+python -m venv venv
+.\venv\Scripts\activate        # Windows
+# source venv/bin/activate     # macOS/Linux
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start server (auto-creates DB and seeds knowledge base on first run)
+python -m app.main
+```
+> API available at `http://localhost:8000` — Swagger docs at `http://localhost:8000/docs`
+
+### Frontend
+
+```bash
+cd frontend
+python -m http.server 8080
+```
+> Dashboard at `http://localhost:8080`
+
+---
+
+## Configuration
+
+Create a `.env` file inside `backend/`:
+
+```env
+# Optional — enables GPT-4o-mini for response generation
+OPENAI_API_KEY=sk-...
+
+# Optional — override database (default: SQLite)
+DATABASE_URL=sqlite:///./data/nexus.db
+# DATABASE_URL=postgresql://user:password@localhost/nexus
+```
+
+Without an `OPENAI_API_KEY`, the system runs **fully offline** using the built-in template engine and rule-based classifier.
+
+---
+
+## Usage Guide
+
+1. **Start both servers** (backend on `:8000`, frontend on `:8080`)
+2. **Open the Command Center** at `http://localhost:8080`
+3. Click **"Ingest Synthetic Ticket"** — the AI pipeline runs in under 100ms
+4. Watch the **Live Queue** update with intent, urgency, and status
+5. Click any ticket to open the **Ticket Modal** — review the AI draft, edit it, then click **Approve & Resolve**
+6. Visit `http://localhost:8000/docs` to explore all API endpoints interactively
+7. Run the bulk demo script: `python demo.py` (requires the backend to be running)
