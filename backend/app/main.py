@@ -1,5 +1,5 @@
 """
-Nexus Support AI — FastAPI Application Entry Point
+CogV8 Support AI — FastAPI Application Entry Point
 Full end-to-end backend with SQLite persistence, analytics, WebSocket live feed,
 and knowledge base management.
 """
@@ -43,7 +43,7 @@ APP_VERSION = "2.0.0"
 APP_START_TIME = time.time()
 
 app = FastAPI(
-    title="Nexus Support AI",
+    title="CogV8 Support AI",
     description="Autonomous AI Customer Support Operations Platform",
     version=APP_VERSION,
     docs_url="/docs",
@@ -64,7 +64,7 @@ active_connections: List[WebSocket] = []
 @app.on_event("startup")
 async def on_startup():
     init_db()
-    logger.info(f"Nexus Support AI v{APP_VERSION} started. DB initialised.")
+    logger.info(f"CogV8 Support AI v{APP_VERSION} started. DB initialised.")
 
 
 # ---------------------------------------------------------------------------

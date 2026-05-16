@@ -117,7 +117,7 @@ _SEED_ARTICLES = [
             "Webhooks allow real-time event notifications to your endpoint. "
             "Configure webhooks under Settings > Integrations > Webhooks. "
             "Available events: ticket.created, ticket.resolved, user.signup, payment.failed. "
-            "We sign all webhook payloads with HMAC-SHA256. Verify the X-Nexus-Signature header. "
+            "We sign all webhook payloads with HMAC-SHA256. Verify the X-CogV8-Signature header. "
             "Retry policy: up to 5 retries with exponential backoff on non-2xx responses."
         ),
         "category": "technical_support",
@@ -188,7 +188,7 @@ _SEED_ARTICLES = [
     {
         "title": "Integration with Third-Party Tools",
         "content": (
-            "Nexus integrates with: Slack, Jira, Salesforce, HubSpot, Zapier, and more. "
+            "CogV8 integrates with: Slack, Jira, Salesforce, HubSpot, Zapier, and more. "
             "Native integrations are available under Settings > Integrations. "
             "For custom integrations, use our REST API with OAuth2 authentication. "
             "Zapier allows no-code automation with 3,000+ apps. "

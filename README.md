@@ -1,6 +1,6 @@
-# Nexus Support AI — Cognitive Operations Platform
+# CogV8 Support AI — Cognitive Operations Platform
 
-> **Production-grade, autonomous AI Customer Support Operations Platform.** Nexus replaces Tier-1 support with an end-to-end intelligent pipeline: ticket ingestion -> classification -> RAG retrieval -> response synthesis -> escalation routing — all exposed through a premium, real-time Cognitive Command Center.
+> **Production-grade, autonomous AI Customer Support Operations Platform.** CogV8 replaces Tier-1 support with an end-to-end intelligent pipeline: ticket ingestion -> classification -> RAG retrieval -> response synthesis -> escalation routing — all exposed through a premium, real-time Cognitive Command Center.
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## Overview
 
-Nexus operates in two modes:
+CogV8 operates in two modes:
 | Mode | Behaviour |
 |------|-----------| 
 | **Assisted** | Generates a draft response and routes to a human operator for review |
@@ -289,8 +289,8 @@ Create a `.env` file inside `backend/`:
 OPENAI_API_KEY=sk-...
 
 # Optional — override database (default: SQLite)
-DATABASE_URL=sqlite:///./data/nexus.db
-# DATABASE_URL=postgresql://user:password@localhost/nexus
+DATABASE_URL=sqlite:///./data/cogv8.db
+# DATABASE_URL=postgresql://user:password@localhost/cogv8
 ```
 
 Without an `OPENAI_API_KEY`, the system runs **fully offline** using the built-in template engine and rule-based classifier.

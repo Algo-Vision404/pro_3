@@ -140,7 +140,7 @@ _TEMPLATES = {
     },
     Intent.UNKNOWN: {
         "default": (
-            "Thank you for contacting Nexus Support.\n\n"
+            "Thank you for contacting CogV8 Support.\n\n"
             "I've received your message and will make sure it gets to the right team. "
             "To ensure we can help you as quickly as possible, could you provide a bit more detail about your request?\n\n"
             "Our support team will follow up within 4 hours."
@@ -268,7 +268,7 @@ class GenerationService:
         context_str = "\n---\n".join(retrieval.context[:3]) if retrieval.context else "No context available."
 
         system_prompt = (
-            "You are an expert customer support agent for Nexus AI. "
+            "You are an expert customer support agent for CogV8 AI. "
             "Your tone is professional, empathetic, and solution-oriented. "
             "Provide a complete, actionable response draft to the customer's ticket. "
             "Format clearly using markdown where helpful."
