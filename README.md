@@ -173,35 +173,76 @@ flowchart TD
 
 ---
 
-## Project Structure
+## System Architecture
 
-```text
-nexus-support-ai/
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                  # FastAPI router, WebSocket, startup lifecycle
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   ├── schema.py            # All Pydantic models (request/response/analytics)
-│   │   │   └── database.py          # SQLAlchemy ORM models + engine setup
-│   │   └── services/
-│   │       ├── __init__.py
-│   │       ├── classification_service.py  # Rule-based keyword scoring classifier
-│   │       ├── rag_service.py             # ChromaDB RAG with 15 seeded articles
-│   │       ├── generation_service.py      # Template engine + optional GPT-4o-mini
-│   │       └── escalation_service.py      # 6-rule risk escalation engine
-│   ├── data/
-│   │   ├── nexus.db                 # SQLite database (auto-created)
-│   │   └── chroma_db/               # ChromaDB vector store (auto-created)
-│   ├── requirements.txt
-│   └── .env                         # Optional: OPENAI_API_KEY, DATABASE_URL
-├── frontend/
-│   ├── index.html                   # Cognitive Command Center UI
-│   ├── style.css                    # Premium glassmorphic design system
-│   └── script.js                    # Reactive data binding + WebSocket client
-└── demo.py                          # Synthetic ticket pipeline simulator
+```mermaid
+block-beta
+    columns 3
+
+    block:INGESTION["🔌 Ingestion Layer"]:1
+        columns 1
+        i1["Email Source"]
+        i2["API / Webhook"]
+        i3["Bulk CSV"]
+    end
+
+    space
+
+    block:FRONTEND["🖥️ Presentation Layer"]:1
+        columns 1
+        f1["Cognitive Command Center\n(localhost:8080)"]
+        f2["Live Ticket Queue"]
+        f3["Analytics Dashboard"]
+        f4["Knowledge Base Viewer"]
+        f5["Ticket Detail Modal"]
+    end
+
+    INGESTION -- "POST /ingest_ticket" --> API
+    FRONTEND <-- "REST + WebSocket" --> API
+
+    block:API["⚡ API Gateway\nFastAPI — localhost:8000"]:3
+        columns 3
+        a1["Ticket Endpoints\n/ingest /tickets /ticket/{id}"]
+        a2["Pipeline Endpoint\n/process_ticket/{id}"]
+        a3["System Endpoints\n/health /metrics /analytics /docs"]
+        a4["Feedback Endpoint\n/feedback"]
+        a5["Knowledge Base\n/knowledge-base /search"]
+        a6["WebSocket\n/ws/live-feed"]
+    end
+
+    API --> PIPELINE
+
+    block:PIPELINE["🧠 AI Processing Pipeline"]:3
+        columns 3
+        p1["1️⃣ Classification Engine\nRule-based keyword scoring\n9 intents · 5 sentiments\nUrgency boosting"]
+        p2["2️⃣ RAG Retrieval\nChromaDB semantic search\n15 seeded KB articles\nCosine similarity scoring"]
+        p3["3️⃣ Generation Engine\nTemplate library\nper intent + sentiment\nOptional GPT-4o-mini"]
+        space
+        p4["4️⃣ Escalation Engine\n6-rule risk evaluator\nLegal · Urgency · Confidence\nSentiment · Intent"]
+        space
+    end
+
+    PIPELINE --> STORAGE
+
+    block:STORAGE["💾 Persistence Layer"]:2
+        columns 2
+        s1["SQLite (SQLAlchemy ORM)\nTickets · Classifications\nDrafts · Escalations\nFeedback · KB Articles"]
+        s2["ChromaDB Vector Store\nHNSW Index\nCosine Similarity\nPersistent or Ephemeral"]
+    end
 ```
+
+### Layer Responsibilities
+
+| Layer | Technology | Responsibility |
+|-------|-----------|----------------|
+| **Ingestion** | FastAPI REST | Accept tickets from Email, API, Webhooks, CSV bulk upload |
+| **API Gateway** | FastAPI + Uvicorn | Route all requests, manage WebSocket connections, serve OpenAPI docs |
+| **Classification** | Rule-based NLP | Detect intent (9 categories), sentiment (5 tiers), and urgency score |
+| **RAG Retrieval** | ChromaDB + HNSW | Semantic vector search over knowledge base to inject relevant context |
+| **Generation** | Template Engine / GPT-4o-mini | Synthesise empathetic, actionable response drafts with confidence scoring |
+| **Escalation** | Rule Engine | Evaluate 6 risk rules; route high-risk tickets to human teams |
+| **Persistence** | SQLite + SQLAlchemy | Persist all entities with relational integrity and full query support |
+| **Presentation** | HTML/CSS/JS | Premium glassmorphic command center with real-time WebSocket updates |
 
 ---
 
