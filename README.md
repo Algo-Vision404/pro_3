@@ -34,31 +34,26 @@ A six-rule **Escalation Engine** catches edge-cases (legal risk, extreme urgency
 ### End-to-End Data Flow
 
 ```mermaid
-flowchart LR
+flowchart TD
+    A["Ticket Source - Email / API / Webhook"] -->|POST /ingest_ticket| B(FastAPI Router)
+    B --> DB[("SQLite DB - SQLAlchemy ORM")]
+    B -->|POST /process_ticket| C{AI Pipeline}
 
-A[Email / API / Webhook]
-B[FastAPI]
-DB[(SQLite)]
-WS[WebSocket]
-UI[Command Center]
+    subgraph C [AI Processing Pipeline]
+        direction TB
+        C1["1. Classification Engine - Rule-based keyword scoring - Intent, Urgency, Sentiment"]
+        C2["2. RAG Retrieval - ChromaDB vector store - Semantic similarity search"]
+        C3["3. Generation Engine - Template synthesis or GPT-4o-mini"]
+        C4["4. Escalation Engine - 6-rule risk evaluator - Legal, Urgency, Confidence"]
+        C1 --> C2 --> C3 --> C4
+    end
 
-subgraph AI["AI Pipeline"]
-C1[Classification]
-C2[RAG Retrieval]
-C3[Response Generation]
-C4[Escalation Engine]
-end
-
-A --> B
-B --> DB
-B --> C1
-C1 --> C2
-C2 --> C3
-C3 --> C4
-C4 --> DB
-C4 --> WS
-DB --> UI
-WS --> UI
+    C --> DB
+    C -->|WebSocket broadcast| WS["Live Feed - ws://localhost:8000/ws/live-feed"]
+    DB -->|GET /metrics| METRICS[Analytics Engine]
+    DB -->|GET /analytics| METRICS
+    WS --> UI["Cognitive Command Center - localhost:8080"]
+    METRICS --> UI
 ```
 
 ### Service Architecture
@@ -311,3 +306,4 @@ Without an `OPENAI_API_KEY`, the system runs **fully offline** using the built-i
 5. Click any ticket to open the **Ticket Modal** — review the AI draft, edit it, then click **Approve & Resolve**
 6. Visit `http://localhost:8000/docs` to explore all API endpoints interactively
 7. Run the bulk demo script: `python demo.py` (requires the backend to be running)
+ Fix the architecture and flowchart in this readme, I think the design didn’t appear
