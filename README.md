@@ -34,26 +34,31 @@ A six-rule **Escalation Engine** catches edge-cases (legal risk, extreme urgency
 ### End-to-End Data Flow
 
 ```mermaid
-flowchart TD
-    A["Ticket Source - Email / API / Webhook"] -->|POST /ingest_ticket| B(FastAPI Router)
-    B --> DB[("SQLite DB - SQLAlchemy ORM")]
-    B -->|POST /process_ticket| C{AI Pipeline}
+flowchart LR
 
-    subgraph C [AI Processing Pipeline]
-        direction TB
-        C1["1. Classification Engine - Rule-based keyword scoring - Intent, Urgency, Sentiment"]
-        C2["2. RAG Retrieval - ChromaDB vector store - Semantic similarity search"]
-        C3["3. Generation Engine - Template synthesis or GPT-4o-mini"]
-        C4["4. Escalation Engine - 6-rule risk evaluator - Legal, Urgency, Confidence"]
-        C1 --> C2 --> C3 --> C4
-    end
+A[Email / API / Webhook]
+B[FastAPI]
+DB[(SQLite)]
+WS[WebSocket]
+UI[Command Center]
 
-    C --> DB
-    C -->|WebSocket broadcast| WS["Live Feed - ws://localhost:8000/ws/live-feed"]
-    DB -->|GET /metrics| METRICS[Analytics Engine]
-    DB -->|GET /analytics| METRICS
-    WS --> UI["Cognitive Command Center - localhost:8080"]
-    METRICS --> UI
+subgraph AI["AI Pipeline"]
+C1[Classification]
+C2[RAG Retrieval]
+C3[Response Generation]
+C4[Escalation Engine]
+end
+
+A --> B
+B --> DB
+B --> C1
+C1 --> C2
+C2 --> C3
+C3 --> C4
+C4 --> DB
+C4 --> WS
+DB --> UI
+WS --> UI
 ```
 
 ### Service Architecture
